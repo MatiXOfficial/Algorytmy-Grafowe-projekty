@@ -52,19 +52,6 @@ void Graph::printVector(vector<int> vec)
 	cout << endl;
 }
 
-vector<bool> Graph::findOuterInner(vector<int> forest, vector<int> depth)	//outer - true, inner - false
-{
-	vector<bool> result(edges.size());
-	for (int i = 0; i < forest.size(); i++)
-	{
-		if (depth[i] % 2 == 0)
-			result[i] = true;
-		else
-			result[i] = false;
-	}
-	return result;
-}
-
 vector<int> Graph::findOuterConnectedOutsideForest(vector<int> forest, vector<bool> isOuter)
 {
 	for (int u = 0; u < edges.size(); u++)
@@ -137,8 +124,9 @@ vector<int> Graph::findBlossom(vector<int> forest, int x1, int x2)
 	return result;
 }
 
-void Graph::contract(vector<int> blossom, vector<int>& M)
+vector< vector<int> > Graph::contract(vector<int> blossom, vector<int>& M)
 {
+	vector< vector<int> > addedEdges;
 	int y = blossom[0];
 	for (int i = 1; i < blossom.size(); i++)
 	{
@@ -146,31 +134,30 @@ void Graph::contract(vector<int> blossom, vector<int>& M)
 		for (int j = 0; j < edges[u].size(); j++)
 		{
 			int v = edges[u][j];
-			deleteEdge(u, v);
-			j--;
-			if (find(blossom.begin(), blossom.end(), v) == blossom.end())
+			if (v != blossom[i - 1] && v != blossom[(i + 1) % blossom.size()])
 			{
 				addEdge(y, v);
+				addedEdges.push_back({ u, v });
 				if (M[v] == u)
 					M[v] = y;
 			}
 		}
 	}
+	return addedEdges;
 }
 
-void Graph::lift(vector<int> &M, vector<int> blossomVertices, vector< vector<int> > blossomEdges)
+void Graph::lift(vector<int> &M, vector<int> blossomVertices, vector< vector<int> > addedEdges)
 {
 	int y = blossomVertices[0];
-	for (auto x : edges[y])
+	for (auto edge : addedEdges)
 	{
-		deleteEdge(y, x);
-	}
-	for (int i = 0; i < blossomEdges.size(); i++)
-	{
-		int u = blossomVertices[i];
-		for (auto v : blossomEdges[i])
+		int u = edge[0], v = edge[1];
+		deleteEdge(y, v);
+		if (M[y] == v)
 		{
-			addEdge(u, v);
+			M[y] = -2;
+			M[u] = v;
+			M[v] = u;
 		}
 	}
 
@@ -194,25 +181,25 @@ vector<int> Graph::edmonds()
 	vector<int> forest(edges.size());
 	for (int i = 0; i < forest.size(); i++)
 		forest[i] = i;
-	vector<int> depth(edges.size(), 0);
+	vector<bool> isOuter(edges.size(), true);
 	vector< vector<int> > blossomsVertices;
-	vector< vector < vector<int> > > blossomsEdges;
+	vector< vector< vector<int> > > addedEdges;
 
 	while (true)
 	{
-		vector<bool> isOuter = findOuterInner(forest, depth);
 		vector<int> edge = findOuterConnectedOutsideForest(forest, isOuter);
 		if (!edge.empty())
 		{
 			int x = edge[0], y = edge[1];
 			for (auto z : edges[y])
 			{
-				if (M[z] == y)
+				if (forest[z] != -2 && M[z] == y)
 				{
 					forest[y] = x;
-					depth[y] = depth[x] + 1;
+					isOuter[y] = false;
+
 					forest[z] = y;
-					depth[z] = depth[y] + 1;
+					isOuter[z] = true;
 					break;
 				}
 			}
@@ -235,7 +222,10 @@ vector<int> Graph::edmonds()
 					for (int i = 0; i < edges.size(); i++)
 					{
 						if (M[i] == -1)
+						{
 							forest[i] = i;
+							isOuter[i] = true;
+						}
 						else if (M[i] > -1)
 							forest[i] = -1;
 					}
@@ -244,18 +234,12 @@ vector<int> Graph::edmonds()
 				{
 					vector<int> B = findBlossom(forest, x1, x2);
 					blossomsVertices.push_back(B);
-					vector< vector<int> > blossomEdges;
-					for (auto x : B)
-					{
-						blossomEdges.push_back(edges[x]);
-					}
 					for (int i = 1; i < B.size(); i++)
 					{
 						forest[B[i]] = -2;
 						M[B[i]] = -2;
 					}
-					blossomsEdges.push_back(blossomEdges);
-					contract(B, M);
+					addedEdges.push_back(contract(B, M));
 				}
 			}
 			else
@@ -266,7 +250,7 @@ vector<int> Graph::edmonds()
 	}
 	for (int i = blossomsVertices.size() - 1; i >= 0; i--)
 	{
-		lift(M, blossomsVertices[i], blossomsEdges[i]);
+		lift(M, blossomsVertices[i], addedEdges[i]);
 	}
 	vector<int> result;
 	for (int i = 0; i < M.size(); i++)

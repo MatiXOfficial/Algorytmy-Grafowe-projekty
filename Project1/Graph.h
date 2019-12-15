@@ -5,14 +5,13 @@ class Graph
 {
 	vector< vector<int> > edges;
 
-	vector<bool> findOuterInner(vector<int>, vector<int> depth);
 	vector<int> findOuterConnectedOutsideForest(vector<int> forest, vector<bool> isOuter);
 	vector<int> findConnectedOuters(vector<int> forest, vector<bool> isOuter);
 	int findRoot(int u, vector<int> forest);
 	vector<int> findPath(int u, vector<int> forest);
 	vector<int> augment(vector<int> M, vector<int> augmentingPath);
 	vector<int> findBlossom(vector<int> forest, int x1, int x2);
-	void contract(vector<int> blossom, vector<int> &M);
+	vector< vector<int> > contract(vector<int> blossom, vector<int> &M);
 	void printVector(vector<int> vec);
 	void lift(vector<int>& M, vector<int> blossomVertices, vector< vector<int> > blossomEdges);
 public:
