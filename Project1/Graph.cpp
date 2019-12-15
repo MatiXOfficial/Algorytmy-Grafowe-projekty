@@ -10,6 +10,12 @@ Graph::Graph(int v)
 
 void Graph::addEdge(int u, int v)
 {
+	edges[u].push_back(v);
+	edges[v].push_back(u);
+}
+
+void Graph::addEdgeCheck(int u, int v)
+{
 	if (find(edges[u].begin(), edges[u].end(), v) == edges[u].end())
 		edges[u].push_back(v);
 	if (find(edges[v].begin(), edges[v].end(), u) == edges[v].end())
@@ -52,7 +58,7 @@ void Graph::printVector(vector<int> vec)
 	cout << endl;
 }
 
-vector<int> Graph::findOuterConnectedOutsideForest(vector<int> forest, vector<bool> isOuter)
+vector<int> Graph::findOuterConnectedOutsideForest(const vector<int> &forest, const vector<bool> &isOuter)
 {
 	for (int u = 0; u < edges.size(); u++)
 		if (forest[u] > -1 && isOuter[u])
@@ -66,7 +72,7 @@ vector<int> Graph::findOuterConnectedOutsideForest(vector<int> forest, vector<bo
 	return {};
 }
 
-vector<int> Graph::findConnectedOuters(vector<int> forest, vector<bool> isOuter)
+vector<int> Graph::findConnectedOuters(const vector<int> &forest, const vector<bool> &isOuter)
 {
 	for (int u = 0; u < edges.size(); u++)
 	{
@@ -82,14 +88,7 @@ vector<int> Graph::findConnectedOuters(vector<int> forest, vector<bool> isOuter)
 	return {};
 }
 
-int Graph::findRoot(int u, vector<int> forest)
-{
-	if (forest[u] == u)
-		return u;
-	return findRoot(forest[u], forest);
-}
-
-vector<int> Graph::findPath(int u, vector<int> forest)
+vector<int> Graph::findPath(int u, const vector<int>& forest)
 {
 	if (forest[u] == u)
 		return { u };
@@ -98,7 +97,7 @@ vector<int> Graph::findPath(int u, vector<int> forest)
 	return result;
 }
 
-vector<int> Graph::augment(vector<int> M, vector<int> augmentingPath)
+vector<int> Graph::augment(vector<int> &M, const vector<int> &augmentingPath)
 {
 	for (int i = 0; i < augmentingPath.size() - 1; i += 2)
 	{
@@ -108,10 +107,8 @@ vector<int> Graph::augment(vector<int> M, vector<int> augmentingPath)
 	return M;
 }
 
-vector<int> Graph::findBlossom(vector<int> forest, int x1, int x2)
+vector<int> Graph::findBlossom(const vector<int> &forest, const vector<int> &p1, const vector<int> &p2)
 {
-	vector<int> p1 = findPath(x1, forest);
-	vector<int> p2 = findPath(x2, forest);
 	int i = 0; 
 	while (i < p1.size() && i < p2.size() && p1[i] == p2[i])
 		i++;
@@ -124,7 +121,7 @@ vector<int> Graph::findBlossom(vector<int> forest, int x1, int x2)
 	return result;
 }
 
-vector< vector<int> > Graph::contract(vector<int> blossom, vector<int>& M)
+vector< vector<int> > Graph::contract(const vector<int>& blossom, vector<int>& M)
 {
 	vector< vector<int> > addedEdges;
 	int y = blossom[0];
@@ -136,23 +133,20 @@ vector< vector<int> > Graph::contract(vector<int> blossom, vector<int>& M)
 			int v = edges[u][j];
 			if (v != blossom[i - 1] && v != blossom[(i + 1) % blossom.size()])
 			{
-				addEdge(y, v);
+				addEdgeCheck(y, v);
 				addedEdges.push_back({ u, v });
-				if (M[v] == u)
-					M[v] = y;
 			}
 		}
 	}
 	return addedEdges;
 }
 
-void Graph::lift(vector<int> &M, vector<int> blossomVertices, vector< vector<int> > addedEdges)
+void Graph::lift(vector<int> &M, const vector<int> &blossomVertices, const vector< vector<int> > &addedEdges)
 {
 	int y = blossomVertices[0];
 	for (auto edge : addedEdges)
 	{
 		int u = edge[0], v = edge[1];
-		deleteEdge(y, v);
 		if (M[y] == v)
 		{
 			M[y] = -2;
@@ -210,10 +204,10 @@ vector<int> Graph::edmonds()
 			if (!edge.empty())
 			{
 				int x1 = edge[0], x2 = edge[1];
-				if (findRoot(x1, forest) != findRoot(x2, forest))
+				vector<int> p1 = findPath(x1, forest);
+				vector<int> p2 = findPath(x2, forest);
+				if (p1[0] != p2[0])
 				{
-					vector<int> p1 = findPath(x1, forest);
-					vector<int> p2 = findPath(x2, forest);
 					reverse(p2.begin(), p2.end());
 					vector<int> augmentingPath = p1;
 					for (auto el : p2)
@@ -232,7 +226,7 @@ vector<int> Graph::edmonds()
 				}
 				else
 				{
-					vector<int> B = findBlossom(forest, x1, x2);
+					vector<int> B = findBlossom(forest, p1, p2);
 					blossomsVertices.push_back(B);
 					for (int i = 1; i < B.size(); i++)
 					{
@@ -252,6 +246,7 @@ vector<int> Graph::edmonds()
 	{
 		lift(M, blossomsVertices[i], addedEdges[i]);
 	}
+
 	vector<int> result;
 	for (int i = 0; i < M.size(); i++)
 	{

@@ -15,12 +15,10 @@ int main()
 	int n, k;
 	cin >> n >> k;
 
-	vector<int> clerks;
 	for (int i = 0; i < k; i++)
 	{
 		int clerk;
 		cin >> clerk;
-		clerks.push_back(clerk);
 	}
 
 	int m;
