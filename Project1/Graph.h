@@ -5,6 +5,7 @@ class Graph
 {
 	vector< vector<int> > edges;
 
+	vector<int> findGreedyMatching();
 	vector<int> findOuterConnectedOutsideForest(const vector<int> &forest, const vector<bool> &isOuter);
 	vector<int> findConnectedOuters(const vector<int>& forest, const vector<bool>& isOuter);
 	vector<int> findPath(int u, const vector<int> &forest);

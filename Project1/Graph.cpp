@@ -58,6 +58,27 @@ void Graph::printVector(vector<int> vec)
 	cout << endl;
 }
 
+vector<int> Graph::findGreedyMatching()
+{
+	vector<int> M(edges.size(), -1);
+	for (int u = 0; u < edges.size(); u++)
+	{
+		if (M[u] == -1)
+		{
+			for (auto v : edges[u])
+			{
+				if (M[v] == -1)
+				{
+					M[u] = v;
+					M[v] = u;
+					break;
+				}
+			}
+		}
+	}
+	return M;
+}
+
 vector<int> Graph::findOuterConnectedOutsideForest(const vector<int> &forest, const vector<bool> &isOuter)
 {
 	for (int u = 0; u < edges.size(); u++)
@@ -171,80 +192,106 @@ void Graph::lift(vector<int> &M, const vector<int> &blossomVertices, const vecto
 
 vector<int> Graph::edmonds()
 {
-	vector<int> M(edges.size(), -1);
-	vector<int> forest(edges.size());
-	for (int i = 0; i < forest.size(); i++)
-		forest[i] = i;
-	vector<bool> isOuter(edges.size(), true);
-	vector< vector<int> > blossomsVertices;
-	vector< vector< vector<int> > > addedEdges;
-
-	while (true)
+	vector<int> M = findGreedyMatching();
+	int tmp = 0;
+	for (int i = 0; i < M.size(); i++)
 	{
-		vector<int> edge = findOuterConnectedOutsideForest(forest, isOuter);
-		if (!edge.empty())
+		if (M[i] != -1)
+			tmp++;
+	}
+	tmp /= 2;
+	if (tmp < edges.size() / 2)
+	{
+		vector<int> forest(edges.size());
+		vector<bool> isOuter(edges.size());
+		for (int i = 0; i < forest.size(); i++)
 		{
-			int x = edge[0], y = edge[1];
-			for (auto z : edges[y])
+			if (M[i] == -1)
 			{
-				if (forest[z] != -2 && M[z] == y)
-				{
-					forest[y] = x;
-					isOuter[y] = false;
-
-					forest[z] = y;
-					isOuter[z] = true;
-					break;
-				}
+				forest[i] = i;
+				isOuter[i] = true;
 			}
+			else
+				forest[i] = -1;
 		}
-		else
+		vector< vector<int> > blossomsVertices;
+		vector< vector< vector<int> > > addedEdges;
+		vector< vector<int> > yEdges;
+
+		while (true)
 		{
-			edge = findConnectedOuters(forest, isOuter);
+			vector<int> edge = findOuterConnectedOutsideForest(forest, isOuter);
 			if (!edge.empty())
 			{
-				int x1 = edge[0], x2 = edge[1];
-				vector<int> p1 = findPath(x1, forest);
-				vector<int> p2 = findPath(x2, forest);
-				if (p1[0] != p2[0])
+				int x = edge[0], y = edge[1];
+				for (auto z : edges[y])
 				{
-					reverse(p2.begin(), p2.end());
-					vector<int> augmentingPath = p1;
-					for (auto el : p2)
-						augmentingPath.push_back(el);
-					M = augment(M, augmentingPath);
-					for (int i = 0; i < edges.size(); i++)
+					if (forest[z] != -2 && M[z] == y)
 					{
-						if (M[i] == -1)
-						{
-							forest[i] = i;
-							isOuter[i] = true;
-						}
-						else if (M[i] > -1)
-							forest[i] = -1;
+						forest[y] = x;
+						isOuter[y] = false;
+
+						forest[z] = y;
+						isOuter[z] = true;
+						break;
 					}
-				}
-				else
-				{
-					vector<int> B = findBlossom(forest, p1, p2);
-					blossomsVertices.push_back(B);
-					for (int i = 1; i < B.size(); i++)
-					{
-						forest[B[i]] = -2;
-						M[B[i]] = -2;
-					}
-					addedEdges.push_back(contract(B, M));
 				}
 			}
 			else
 			{
-				break;
+				edge = findConnectedOuters(forest, isOuter);
+				if (!edge.empty())
+				{
+					int x1 = edge[0], x2 = edge[1];
+					vector<int> p1 = findPath(x1, forest);
+					vector<int> p2 = findPath(x2, forest);
+					if (p1[0] != p2[0])
+					{
+						reverse(p2.begin(), p2.end());
+						vector<int> augmentingPath = p1;
+						for (auto el : p2)
+							augmentingPath.push_back(el);
+						M = augment(M, augmentingPath);
+						for (int i = 0; i < edges.size(); i++)
+						{
+							if (M[i] == -1)
+							{
+								forest[i] = i;
+								isOuter[i] = true;
+							}
+							else if (M[i] > -1)
+								forest[i] = -1;
+						}
+					}
+					else
+					{
+						vector<int> B = findBlossom(forest, p1, p2);
+						blossomsVertices.push_back(B);
+						for (int i = 1; i < B.size(); i++)
+						{
+							for (int j = 0; j < forest.size(); j++)
+							{
+								if (forest[j] == B[i])
+								{
+									forest[j] = B[0];
+								}
+							}
+							forest[B[i]] = -2;
+							M[B[i]] = -2;
+						}
+						addedEdges.push_back(contract(B, M));
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
-	}
-	for (int i = blossomsVertices.size() - 1; i >= 0; i--)
-	{
-		lift(M, blossomsVertices[i], addedEdges[i]);
+		for (int i = blossomsVertices.size() - 1; i >= 0; i--)
+		{
+			lift(M, blossomsVertices[i], addedEdges[i]);
+		}
 	}
 
 	vector<int> result;
