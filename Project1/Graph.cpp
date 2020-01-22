@@ -61,7 +61,7 @@ void Graph::printVector(vector<int> vec)
 vector<int> Graph::findGreedyMatching()
 {
 	vector<int> M(edges.size(), -1);
-	for (int u = 0; u < edges.size(); u++)
+	for (int u = edges.size() - 1; u >= 0; u--)
 	{
 		if (M[u] == -1)
 		{
@@ -192,15 +192,16 @@ void Graph::lift(vector<int> &M, const vector<int> &blossomVertices, const vecto
 
 vector<int> Graph::edmonds()
 {
-	vector<int> M = findGreedyMatching();
+	/*vector<int> M = findGreedyMatching();
 	int tmp = 0;
 	for (int i = 0; i < M.size(); i++)
 	{
 		if (M[i] != -1)
 			tmp++;
 	}
-	tmp /= 2;
-	if (tmp < edges.size() / 2)
+	tmp /= 2;*/
+	//if (tmp < edges.size() / 2)
+	vector<int> M(edges.size(), -1);
 	{
 		vector<int> forest(edges.size());
 		vector<bool> isOuter(edges.size());
@@ -216,7 +217,6 @@ vector<int> Graph::edmonds()
 		}
 		vector< vector<int> > blossomsVertices;
 		vector< vector< vector<int> > > addedEdges;
-		vector< vector<int> > yEdges;
 
 		while (true)
 		{
