@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "Graph.h"
+#include "BipGraph.h"
 
 using namespace std;
 
@@ -28,12 +28,12 @@ int main()
 
 	for (int i = 0; i < n; i++)
 	{
-		Graph G(V[i]);
+		BipGraph BG(V[i]);
 		for (int j = 0; j < E[i]; j++)
 		{
-			G.addEdge(edges[i][j][0], edges[i][j][1], edges[i][j][2], edges[i][j][3]);
+			BG.addEdge(edges[i][j][0], edges[i][j][1], edges[i][j][2], edges[i][j][3]);
 		}
-		auto highways = G.findHighways();
+		auto highways = BG.findHighways();
 		cout << highways.second << endl;
 		if (highways.second != -1)
 		{

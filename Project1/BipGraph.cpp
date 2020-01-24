@@ -9,9 +9,6 @@ BipGraph::BipGraph(int v)
 
 void BipGraph::addEdge(int u, int v)
 {
-	//if (find(left.begin(), left.end(), v) != left.end() || find(right.begin(), right.end(), u) != right.end())
-	//	throw invalid_argument("ERROR: This would make the graph not bipartite.");
-
 	if (find(left.begin(), left.end(), u) == left.end())
 		left.push_back(u);
 	if (find(right.begin(), right.end(), v) == right.end())
